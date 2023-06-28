@@ -1,19 +1,23 @@
-FROM python:3.10
-
-RUN set -ex && pip install pip pipenv --upgrade
+FROM python:3.11.2
 
 # sphinxcontrib-spelling dependency
 RUN apt-get update \
   && apt-get install -yqq libenchant-2-dev
 
-COPY Pipfile Pipfile
-COPY Pipfile.lock Pipfile.lock
-RUN set -ex && pipenv install --system --deploy --dev
-ENV PYTHONPATH=/usr/local/bin:/app
+# Use a base Python image
 
-COPY setup.py README.rst /app/
-COPY eemeter/ /app/eemeter/
-RUN set -ex && pip install -e /app
-RUN set -ex && cd /usr/local/lib/ && python /app/setup.py develop
-
+# Set the working directory in the container
 WORKDIR /app
+
+# Copy the pyproject.toml and poetry.lock files to the container
+COPY pyproject.toml poetry.lock ./
+
+# Install Poetry
+RUN pip install poetry
+
+# Copy the rest of the project files to the container
+COPY . /app
+
+# Install project dependencies
+RUN POETRY_VIRTUALENVS_CREATE=false poetry install
+
